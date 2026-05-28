@@ -1,0 +1,10 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test</title>
+</head>
+<body>
+    <h2>example</h2>
+    <script src="./partickle/part.js"></script>
+</body>
+</html>
