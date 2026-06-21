@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.own {
+            align-self: flex-end;
+            background: #667eea;
+            color: white;
+        }
+
+        .message.other {
+            align-self: flex-start;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .message-user {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .message-content {
+            font-size: 14px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .status {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">💬 Global Chat</div>
+        <div class="messages" id="messages"></div>
+        <div class="status" id="status">Ready to chat!</div>
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="nameInput" 
+                    placeholder="Your name..." 
+                    maxlength="20"
+                    onkeypress="handleKeyPress(event)"
+                />
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="Type a message..." 
+                    onkeypress="handleKeyPress(event)"
+                />
+            </div>
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div class="button-group">
+            <button onclick="clearAllMessages()" style="background: #e74c3c;">Clear All</button>
+            <button onclick="downloadMessages()" style="background: #27ae60;">Download</button>
+        </div>
+    </div>
+
+    <script>
+        let userId = 'user_' + Math.random().toString(36).substr(2, 9);
+
+        function getMessages() {
+            const stored = localStorage.getItem('chatMessages');
+            return stored ? JSON.parse(stored) : [];
+        }
+
+        function saveMessages(messages) {
+            localStorage.setItem('chatMessages', JSON.stringify(messages));
+            renderMessages();
+            updateStatus();
+        }
+
+        function sendMessage() {
+            const nameInput = document.getElementById('nameInput');
+            const messageInput = document.getElementById('messageInput');
+            const name = nameInput.value.trim() || 'Anonymous';
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            const messages = getMessages();
+            messages.push({
+                id: Date.now(),
+                name: name,
+                content: message,
+                user_id: userId,
+                created_at: new Date().toISOString()
+            });
+
+            saveMessages(messages);
+            messageInput.value = '';
+            messageInput.focus();
+        }
+
+        function renderMessages() {
+            const messagesDiv = document.getElementById('messages');
+            const messages = getMessages();
+            messagesDiv.innerHTML = '';
+
+            messages.forEach(msg => {
+                const isOwn = msg.user_id === userId;
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message ' + (isOwn ? 'own' : 'other');
+
+                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                msgDiv.innerHTML = `
+                    <div class="message-user">${escapeHtml(msg.name)}</div>
+                    <div class="message-content">${escapeHtml(msg.content)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+
+                messagesDiv.appendChild(msgDiv);
+            });
+
+            // Auto-scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateStatus() {
+            const messages = getMessages();
+            document.getElementById('status').textContent = `Messages: ${messages.length} | Your ID: ${userId.substr(0, 8)}`;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function clearAllMessages() {
+            if (confirm('Delete all messages? This cannot be undone.')) {
+                localStorage.setItem('chatMessages', JSON.stringify([]));
+                renderMessages();
+                updateStatus();
+            }
+        }
+
+        function downloadMessages() {
+            const messages = getMessages();
+            const text = messages.map(m => `[${m.created_at}] ${m.name}: ${m.content}`).join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat-messages.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Load messages on page load
+        window.addEventListener('load', () => {
+            renderMessages();
+            updateStatus();
+            document.getElementById('messageInput').focus();
+        });
+
+        // Auto-refresh every 500ms to see updates from other tabs
+        setInterval(() => {
+            renderMessages();
+        }, 500);
+    </script>
+</body>
+</html>

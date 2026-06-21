@@ -17,6 +17,26 @@
 <body>
     <a href="">hello</a>
     <h2>hello again</h2>
-    <h3 style="margin-top: 100rem;">hello again</h3>
+    <h3>hello again but third time</h3>
+    <button id="monke" type="button">click me!</button>
+    <dialog id="dialog">
+        <form method="dialog">
+            <p>hi!!</p>
+            <menu>
+                <button id="closeBtn">Close</button>
+            </menu>
+        </form>
+    </dialog>
+    <script>
+        const btn = document.getElementById("monke");
+        const dialog = document.getElementById("dialog");
+        const closeBtn = document.getElementById("closeBtn");
+
+        if (btn && dialog) {
+            btn.addEventListener('click', () => {
+                    dialog.showModal();
+            });
+        }
+    </script>
 </body>
 </html>
