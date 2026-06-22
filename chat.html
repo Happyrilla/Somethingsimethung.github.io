@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Chat</title>
+    <title>Global Chat - Supabase</title>
     <style>
         * {
             margin: 0;
@@ -57,6 +57,9 @@
             max-width: 80%;
             word-wrap: break-word;
             animation: slideIn 0.3s ease-out;
+            background: #f0f0f0;
+            color: #333;
+            align-self: flex-start;
         }
 
         @keyframes slideIn {
@@ -68,18 +71,6 @@
                 opacity: 1;
                 transform: translateY(0);
             }
-        }
-
-        .message.own {
-            align-self: flex-end;
-            background: #667eea;
-            color: white;
-        }
-
-        .message.other {
-            align-self: flex-start;
-            background: #f0f0f0;
-            color: #333;
         }
 
         .message-user {
@@ -148,30 +139,117 @@
 
         .status {
             font-size: 12px;
-            color: #999;
+            color: #27ae60;
             text-align: center;
             padding: 10px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            padding: 10px 15px;
             border-top: 1px solid #eee;
         }
 
-        .button-group button {
-            flex: 1;
-            padding: 8px;
-            font-size: 12px;
+        .setup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .setup-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .setup-content h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .setup-content p {
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .setup-content input {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .setup-content a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .setup-content a:hover {
+            text-decoration: underline;
+        }
+
+        .setup-content ol {
+            text-align: left;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .setup-content pre {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 11px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="setup-modal" id="setupModal">
+        <div class="setup-content">
+            <h2>⚡ Setup Supabase</h2>
+            <p>Get your free Supabase database from https://supabase.com</p>
+            <ol>
+                <li>Create a Supabase project (free account)</li>
+                <li>In SQL Editor, paste and run this:
+                    <pre>CREATE TABLE messages (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  name TEXT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);</pre>
+                </li>
+                <li>Go to Settings → API and copy:
+                    <ul style="text-align: left; margin-top: 5px;">
+                        <li>Project URL</li>
+                        <li>Anon Key (public)</li>
+                    </ul>
+                </li>
+                <li>Paste them here:</li>
+            </ol>
+            <input type="text" id="supabaseUrl" placeholder="https://xxxxx.supabase.co" />
+            <input type="text" id="supabaseKey" placeholder="eyJhbGc..." />
+            <button onclick="saveAndInit()" style="width: 100%; margin-top: 15px;">Start Chat</button>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">Takes 2 minutes. Need help? Check the console (F12).</p>
+        </div>
+    </div>
+
+    <div class="container" id="chatContainer" style="display: none;">
         <div class="header">💬 Global Chat</div>
         <div class="messages" id="messages"></div>
-        <div class="status" id="status">Ready to chat!</div>
         <div class="input-area">
             <div class="input-wrapper">
                 <input 
@@ -190,14 +268,169 @@
             </div>
             <button onclick="sendMessage()">Send</button>
         </div>
-        <div class="button-group">
-            <button onclick="clearAllMessages()" style="background: #e74c3c;">Clear All</button>
-            <button onclick="downloadMessages()" style="background: #27ae60;">Download</button>
-        </div>
+        <div class="status" id="status">🟢 Connected to Supabase</div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        let supabase = null;
+        let allMessages = [];
         let userId = 'user_' + Math.random().toString(36).substr(2, 9);
+
+        async function saveAndInit() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                alert('Please enter both Project URL and Anon Key');
+                return;
+            }
+
+            localStorage.setItem('supabaseUrl', url);
+            localStorage.setItem('supabaseKey', key);
+
+            await init();
+        }
+
+        async function init() {
+            const url = localStorage.getItem('supabaseUrl');
+            const key = localStorage.getItem('supabaseKey');
+
+            if (!url || !key) {
+                return;
+            }
+
+            try {
+                supabase = window.supabase.createClient(url, key);
+
+                // Test connection
+                const { data, error } = await supabase.from('messages').select('count');
+                if (error) throw error;
+
+                // Hide setup, show chat
+                document.getElementById('setupModal').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'flex';
+
+                // Load and subscribe
+                await loadMessages();
+                subscribeToMessages();
+
+                // Refresh every 2 sec
+                setInterval(loadMessages, 2000);
+
+                document.getElementById('messageInput').focus();
+            } catch (err) {
+                alert('Connection failed:\n\n' + err.message + '\n\nCheck:\n1. URLs are correct\n2. Realtime is enabled in Supabase\n3. Table exists');
+                console.error(err);
+            }
+        }
+
+        async function loadMessages() {
+            if (!supabase) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .order('created_at', { ascending: true })
+                    .limit(200);
+
+                if (error) {
+                    console.error('Load error:', error);
+                    return;
+                }
+
+                allMessages = data || [];
+                renderMessages();
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+
+        async function sendMessage() {
+            const name = document.getElementById('nameInput').value.trim() || 'Anonymous';
+            const content = document.getElementById('messageInput').value.trim();
+
+            if (!content) return;
+
+            try {
+                const { error } = await supabase.from('messages').insert([
+                    {
+                        name: name,
+                        content: content,
+                        created_at: new Date().toISOString()
+                    }
+                ]);
+
+                if (error) {
+                    console.error('Send error:', error);
+                    alert('Failed to send: ' + error.message);
+                    return;
+                }
+
+                document.getElementById('messageInput').value = '';
+                document.getElementById('messageInput').focus();
+                await loadMessages();
+            } catch (err) {
+                console.error('Error:', err);
+            }
+        }
+
+        function subscribeToMessages() {
+            if (!supabase) return;
+
+            supabase
+                .channel('public:messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    allMessages.push(payload.new);
+                    renderMessages();
+                })
+                .subscribe();
+        }
+
+        function renderMessages() {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+
+            allMessages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message';
+
+                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                msgDiv.innerHTML = `
+                    <div class="message-user">${escapeHtml(msg.name)}</div>
+                    <div class="message-content">${escapeHtml(msg.content)}</div>
+                    <div class="message-time">${time}</div>
+                `;
+
+                messagesDiv.appendChild(msgDiv);
+            });
+
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // On load, check for saved credentials
+        window.addEventListener('load', () => {
+            if (localStorage.getItem('supabaseUrl') && localStorage.getItem('supabaseKey')) {
+                init();
+            }
+        });
+    </script>
+</body>
+</html>
 
         function getMessages() {
             const stored = localStorage.getItem('chatMessages');
