@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <style>
+        @font-face {
+            font-family: "Cat Song";
+            src: url("https://the-hubb.vercel.app/assets/Cat%20Song.otf") format("opentype");
+        }
+        /* Container hides the horizontal scrollbar and any outer items */
+.carousel-container {
+  overflow: hidden;
+  width: 100%;
+  background-color: #f4f4f4;
+  padding: 20px 0;
+}
+
+/* The track is twice as wide as a single set of items */
+.carousel-track {
+  display: flex;
+  width: max-content;
+  /* Adjust '20s' to change the scrolling speed */
+  animation: scrollLinear 20s linear infinite; 
+}
+
+/* Individual card styling */
+.carousel-card {
+  width: 200px;
+  height: 100px;
+  background-color: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  margin: 0 15px; /* Creates spacing between cards */
+}
+/* The animation that drives the infinite loop */
+@keyframes scrollLinear {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* Moves exactly half the width of the combined total track */
+    transform: translateX(-50%); 
+  }
+}
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        body strong {
+            font-family: "Cat Song";
+        }
+    </style>
+</head>
+<body>
+    <!-- Random fact card -->
+    <div id="carousel-card" class="carousel-card" style="cursor: pointer; margin: 0 20px 20px; width: auto; min-height: 100px;">Click for a random fact</div>
+
+    <!-- The outer container hides everything that overflows the screen -->
+<div class="carousel-container">
+  
+  <!-- The inner track moves horizontally via CSS animation -->
+  <div class="carousel-track">
+    
+    <!-- First set of items -->
+    <div class="carousel-card" onclick="item(this)">Item 1</div>
+    <div class="carousel-card" onclick="item(this)">Item 2</div>
+    <div class="carousel-card" onclick="item(this)">Item 3</div>
+    <div class="carousel-card" onclick="item(this)">Item 4</div>
+    <div class="carousel-card" onclick="item(this)">Item 5</div>
+    <div class="carousel-card" onclick="item(this)">Item 6</div>
+    <div class="carousel-card" onclick="item(this)">Item 7</div>
+    <div class="carousel-card" onclick="item(this)">Item 8</div>
+
+    <div class="carousel-card" onclick="item(this)">Item 1</div>
+    <div class="carousel-card" onclick="item(this)">Item 2</div>
+    <div class="carousel-card" onclick="item(this)">Item 3</div>
+    <div class="carousel-card" onclick="item(this)">Item 4</div>
+    <div class="carousel-card" onclick="item(this)">Item 5</div>
+    <div class="carousel-card" onclick="item(this)">Item 6</div>
+    <div class="carousel-card" onclick="item(this)">Item 7</div>
+    <div class="carousel-card" onclick="item(this)">Item 8</div>
+  </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+  const isGitHubPages = window.location.hostname.includes("github.io");
+  const basePath = isGitHubPages ? "/The-Hub" : "";
+  const factsUrl = `${basePath}/assets/facts.JSON`;
+
+  fetch(factsUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to load facts");
+      return response.json();
+    })
+    .then((data) => {
+      const factEl = document.getElementById("carousel-card");
+      if (!factEl) return;
+
+      const setRandomFact = () => {
+        const randomQuote = data[Math.floor(Math.random() * data.length)] || "No fact found.";
+        factEl.innerHTML = randomQuote;
+      };
+
+      setRandomFact();
+      factEl.addEventListener("click", setRandomFact);
+    })
+    .catch(() => {
+      const fallback = document.getElementById("carousel-card");
+      if (fallback) {
+        fallback.innerHTML = "idk what happened something broke";
+      }
+    });
+
+});
+</script>
+</body>
+</html>
