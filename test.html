@@ -62,9 +62,6 @@
     </style>
 </head>
 <body>
-    <!-- Random fact card -->
-    <div id="carousel-card" class="carousel-card" style="cursor: pointer; margin: 0 20px 20px; width: auto; min-height: 100px;">Click for a random fact</div>
-
     <!-- The outer container hides everything that overflows the screen -->
 <div class="carousel-container">
   
@@ -91,38 +88,5 @@
     <div class="carousel-card" onclick="item(this)">Item 8</div>
   </div>
 </div>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-
-  const isGitHubPages = window.location.hostname.includes("github.io");
-  const basePath = isGitHubPages ? "/The-Hub" : "";
-  const factsUrl = `${basePath}/assets/facts.JSON`;
-
-  fetch(factsUrl)
-    .then((response) => {
-      if (!response.ok) throw new Error("Failed to load facts");
-      return response.json();
-    })
-    .then((data) => {
-      const factEl = document.getElementById("carousel-card");
-      if (!factEl) return;
-
-      const setRandomFact = () => {
-        const randomQuote = data[Math.floor(Math.random() * data.length)] || "No fact found.";
-        factEl.innerHTML = randomQuote;
-      };
-
-      setRandomFact();
-      factEl.addEventListener("click", setRandomFact);
-    })
-    .catch(() => {
-      const fallback = document.getElementById("carousel-card");
-      if (fallback) {
-        fallback.innerHTML = "idk what happened something broke";
-      }
-    });
-
-});
-</script>
 </body>
 </html>
