@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Get IP Address</title>
+</head>
+<body>
+
+    <h1>Your public IP address is:</h1>
+    <!-- The IP will display here -->
+    <p id="ip-display">Loading...</p>
+
+    <script>
+        fetch('https://ipify.org')
+            .then(response => response.json())
+            .then(data => {
+                // Insert the IP into the HTML element
+                document.getElementById('ip-display').textContent = data.ip;
+            })
+            .catch(error => {
+                document.getElementById('ip-display').textContent = "Error retrieving IP";
+                console.error('Error:', error);
+            });
+    </script>
+
+</body>
+</html>
