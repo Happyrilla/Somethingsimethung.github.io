@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<script>
+async function fetchUserData() {
+  try {
+    // 1. Send the network request
+    const response = await fetch('https://the-hubb.vercel.app/assets/facts.JSON');
+
+    const userData = await response.json();
+    console.log(userData);
+    userData.forEach(user => {
+        const userElement = document.createElement('div');
+        userElement.innerHTML = user;
+        document.body.appendChild(userElement);
+    });
+  } catch (error) {
+    console.error('Fetch failed:', error);
+  }
+}
+
+fetchUserData();
+</script>
