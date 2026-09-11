@@ -1,0 +1,17 @@
+.things {
+    width: 50px;
+    height: 50px;
+}
+.bar {
+    width: inherit;
+    height: 70px;
+    background: linear-gradient(135deg, #f6d365, #fda085, #a1c4fd, #c2e9fb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.container {
+    width:70rem;
+    display: grid;
+    align-items: center;
+}

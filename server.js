@@ -3,6 +3,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -21,6 +23,40 @@ app.use(express.static(path.join(__dirname)));
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/api/movies', async (req, res) => {
+  if (!TMDB_API_KEY) {
+    return res.status(500).json({
+      error: 'TMDB_API_KEY is not configured on the server.'
+    });
+  }
+
+  try {
+    const query = (req.query.query || '').trim();
+    const endpoint = query
+      ? `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`
+      : `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
+
+    const tmdbResponse = await fetch(endpoint);
+
+    if (!tmdbResponse.ok) {
+      const errorText = await tmdbResponse.text();
+      return res.status(tmdbResponse.status).json({
+        error: 'TMDB request failed',
+        details: errorText
+      });
+    }
+
+    const data = await tmdbResponse.json();
+    res.json(data.results || []);
+  } catch (error) {
+    console.error('Failed to fetch TMDB movies:', error);
+    res.status(500).json({
+      error: 'Failed to fetch TMDB movies',
+      details: error.message
+    });
+  }
 });
 
 io.on('connection', (socket) => {
