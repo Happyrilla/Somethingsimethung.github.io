@@ -414,8 +414,8 @@
           card.addEventListener("click", () => {
             const query = encodeURIComponent(movie.title);
             const cinemaUrl = movie.cinemaId
-              ? `https://cinemaos.live/watch/movie/${movie.cinemaId}`
-              : `https://cinemaos.live/search?q=${query}`;
+              ? `https://the-hubb.vercel.app/sub-sites/iframev2.html?app=cinemaos.live/watch/movie/${movie.cinemaId}`
+              : ``;
 
             window.open(cinemaUrl, "_blank", "noopener,noreferrer");
           });
