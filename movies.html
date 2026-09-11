@@ -445,40 +445,19 @@
       }
 
       async function fetchMovies(query) {
-        const endpoints = [];
+        const endpoint = query
+          ? `/api/movies?query=${encodeURIComponent(query)}`
+          : "/api/movies";
 
-        if (window.location.port === "3000") {
-          endpoints.push(query
-            ? `/api/movies?query=${encodeURIComponent(query)}`
-            : "/api/movies");
-        } else {
-          endpoints.push(query
-            ? `http://127.0.0.1:3000/api/movies?query=${encodeURIComponent(query)}`
-            : "http://127.0.0.1:3000/api/movies");
-          endpoints.push(query
-            ? `/api/movies?query=${encodeURIComponent(query)}`
-            : "/api/movies");
+        const response = await fetch(endpoint);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`TMDB request failed (${response.status}). ${errorText}`);
         }
 
-        let lastError = null;
-
-        for (const endpoint of endpoints) {
-          try {
-            const response = await fetch(endpoint);
-
-            if (!response.ok) {
-              lastError = new Error(`TMDB request failed (${response.status}).`);
-              continue;
-            }
-
-            const results = await response.json();
-            return (results || []).map(normalizeMovie);
-          } catch (error) {
-            lastError = error;
-          }
-        }
-
-        throw lastError || new Error("TMDB request failed.");
+        const results = await response.json();
+        return (results || []).map(normalizeMovie);
       }
 
       async function handleSearch() {
