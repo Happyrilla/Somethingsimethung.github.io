@@ -268,100 +268,10 @@
 
       const fallbackMovies = [
         {
-          title: "The Batman",
+          title: "huh",
           year: "2022",
-          overview: "When a sadistic killer targets Gotham City, Batman is forced to confront the city's corruption and his own obsession.",
+          overview: "hehe",
           poster: "https://image.tmdb.org/t/p/w500/74xTEw8w2JYJr4P1JxWyCuxk0IT.jpg"
-        },
-        {
-          title: "Dune",
-          year: "2021",
-          overview: "A noble family becomes embroiled in a war for control over the desert planet Arrakis and its spice resources.",
-          poster: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg"
-        },
-        {
-          title: "Everything Everywhere All at Once",
-          year: "2022",
-          overview: "An exhausted laundromat owner gets pulled into a chaotic adventure across parallel universes.",
-          poster: "https://image.tmdb.org/t/p/w500/zwNa8b5HGH2Q5OKv4N0S2aYVjst.jpg"
-        },
-        {
-          title: "Spider-Man: Into the Spider-Verse",
-          year: "2018",
-          overview: "Miles Morales joins Spider-People from other dimensions to stop a threat to reality itself.",
-          poster: "https://image.tmdb.org/t/p/w500/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg"
-        },
-        {
-          title: "Oppenheimer",
-          year: "2023",
-          overview: "The story of American scientist J. Robert Oppenheimer and his role in the development of the atomic bomb.",
-          poster: "https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg"
-        },
-        {
-          title: "Blade Runner 2049",
-          year: "2017",
-          overview: "A young blade runner discovers a long-buried secret that could destabilize the fragile peace in society.",
-          poster: "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg"
-        },
-        {
-          title: "Arrival",
-          year: "2016",
-          overview: "A linguist is recruited to help communicate with an alien race and avert a global catastrophe.",
-          poster: "https://image.tmdb.org/t/p/w500/AMYgo4b1NNt7pEc4mWLDfQK19V.jpg"
-        },
-        {
-          title: "Inception",
-          year: "2010",
-          overview: "A skilled thief is given a chance at redemption by entering dreams to steal valuable information.",
-          poster: "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg"
-        },
-        {
-          title: "Interstellar",
-          year: "2014",
-          overview: "A team of explorers travels through a wormhole in search of a new home for humanity.",
-          poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
-        },
-        {
-          title: "The Matrix",
-          year: "1999",
-          overview: "A computer hacker learns from mysterious rebels about the true nature of his reality.",
-          poster: "https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg"
-        },
-        {
-          title: "Mad Max: Fury Road",
-          year: "2015",
-          overview: "In a post-apocalyptic wasteland, a drifter and his allies fight to survive and take control.",
-          poster: "https://image.tmdb.org/t/p/w500/8tTj9Rr4nT3MFWMMAr1MbS5C5j5.jpg"
-        },
-        {
-          title: "Parasite",
-          year: "2019",
-          overview: "A poor family schemes to infiltrate a wealthy household and begins to unravel their deception.",
-          poster: "https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg"
-        },
-        {
-          title: "Whiplash",
-          year: "2014",
-          overview: "A young drummer endures brutal punishment to reach perfection under an abusive mentor.",
-          poster: "https://image.tmdb.org/t/p/w500/4fXoQFq7EjEs88Qwvt5M2PZ4JHk.jpg"
-        },
-        {
-          title: "Get Out",
-          year: "2017",
-          overview: "A young man uncovers a horrifying secret about his girlfriend's family during a weekend visit.",
-          poster: "https://image.tmdb.org/t/p/w500/tI0eGNRz8VvAuWyuLXkpHfQmlFA.jpg"
-        },
-        {
-          title: "Spider-Man: Across the Spider-Verse",
-          year: "2023",
-          overview: "Miles Morales returns for another multiversal adventure as he faces new threats across realities.",
-          poster: "https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg"
-        },
-        {
-          title: "Top Gun: Maverick",
-          year: "2022",
-          overview: "Pete 'Maverick' Mitchell returns to train a new generation of elite pilots for a dangerous mission.",
-          poster: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg"
         }
       ];
 
@@ -417,7 +327,7 @@
               ? `https://cinemaos.live/watch/movie/${movie.cinemaId}`
               : `https://cinemaos.live/search?q=${query}`;
 
-            window.open(cinemaUrl, "_blank", "noopener,noreferrer");
+            window.location.href = cinemaUrl;
           });
 
           card.addEventListener("keydown", (event) => {
