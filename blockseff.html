@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101418">
+  <title>Mantle | Download hub</title>
+</head>
+<body>
+  <div id="mantle-hub">
+  <div id="grid-pulse" aria-hidden="true"><canvas></canvas></div>
+  <main>
+    <header data-grid-avoid>
+      <p class="eyebrow">Mantle</p>
+      <h1>Download hub</h1>
+      <p class="intro">Get the Mantle launcher or open one of the available relays.</p>
+    </header>
+
+    <section aria-labelledby="download-heading">
+      <h2 class="section-label" id="download-heading">Launcher</h2>
+      <button class="dl-card" id="dlCard" type="button" aria-busy="false">
+        <span>
+          <span class="dl-title">Download Mantle</span>
+          <span class="dl-desc" id="dlDesc">Fetch and save the latest launcher file.</span>
+        </span>
+        <span class="dl-cta" id="dlCta"><span>Download</span></span>
+      </button>
+          <div class="help" id="dlHelp"></div>
+    </section>
+
+    <section class="relay-section" id="relaySection" aria-labelledby="relay-heading">
+      <h2 class="section-label" id="relay-heading">Open in browser</h2>
+      <button class="gate" id="relayGate" type="button" aria-expanded="false" aria-controls="relayWrap">
+        <span id="gateLabel">Show links</span><span class="gate-mark" aria-hidden="true">+</span>
+      </button>
+      <div class="relay-wrap" id="relayWrap">
+        <div class="relay-list" id="relayList"></div>
+      </div>
+    </section>
+  </main>
+  </div>
+  <script>
+"use strict";
+
+  let runHub = true;
+  try {
+    runHub = localStorage.getItem("blocks") !== "ok";
+  } catch (_) {}
+
+  if (runHub) {
+const hubStyles = document.createElement("style");
+hubStyles.textContent = `
+#mantle-hub {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  color-scheme: dark;
+  background: radial-gradient(ellipse at 50% 0%, #28302e 0, #151b1d 48rem, #101418 100%);
+  color: #edf2ef;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+body { margin: 0; }
+#mantle-hub, #mantle-hub * { box-sizing: border-box; }
+#mantle-hub #grid-pulse {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+#mantle-hub #grid-pulse canvas { display: block; width: 100%; height: 100%; }
+#mantle-hub main {
+  position: relative;
+  z-index: 1;
+  width: min(100% - 32px, 680px);
+  margin: 0 auto;
+  padding: clamp(64px, 12vh, 120px) 0 72px;
+}
+#mantle-hub .eyebrow {
+  margin: 0 0 12px;
+  color: #a8c6b4;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+#mantle-hub h1 { margin: 0; font-size: 3.5rem; line-height: 1; }
+#mantle-hub .intro { max-width: 48ch; margin: 18px 0 38px; color: #b8c2bf; line-height: 1.65; }
+#mantle-hub .section-label {
+  margin: 0 0 12px;
+  color: #8e9d99;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+#mantle-hub .dl-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  padding: 22px;
+  border: 1px solid #46534e;
+  border-radius: 6px;
+  background: #1b2323;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+#mantle-hub .dl-card:hover { border-color: #9ac3a7; background: #202a28; }
+#mantle-hub .dl-card:focus-visible, #mantle-hub .gate:focus-visible, #mantle-hub a:focus-visible { outline: 2px solid #b8d69c; outline-offset: 3px; }
+#mantle-hub .dl-card[aria-busy="true"] { cursor: progress; }
+#mantle-hub .dl-title { display: block; margin-bottom: 7px; font-size: 1.1rem; font-weight: 700; }
+#mantle-hub .dl-desc { display: block; color: #b8c2bf; font-size: 0.9rem; line-height: 1.5; }
+#mantle-hub .dl-cta {
+  display: inline-flex;
+  min-width: 104px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-radius: 4px;
+  background: #c0d6b3;
+  color: #152019;
+  font-weight: 700;
+  white-space: nowrap;
+}
+#mantle-hub .dl-cta svg { width: 17px; height: 17px; }
+#mantle-hub .dl-cta.ok { background: #a8d8b2; }
+#mantle-hub .dl-cta.bad { background: #e3b2a5; }
+#mantle-hub .spin {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: mantle-hub-spin 0.8s linear infinite;
+}
+@keyframes mantle-hub-spin { to { transform: rotate(360deg); } }
+#mantle-hub .help { display: none; margin: 12px 2px 0; color: #b8c2bf; font-size: 0.88rem; line-height: 1.6; }
+#mantle-hub .help a, #mantle-hub .fallback-links a { color: #c0d6b3; }
+#mantle-hub .fallback-links { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 8px; }
+#mantle-hub .relay-section { margin-top: 44px; }
+#mantle-hub .gate {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border: 0;
+  border-bottom: 1px solid #394440;
+  background: transparent;
+  color: #edf2ef;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+#mantle-hub .gate-mark { color: #b8c2bf; font-size: 1.2rem; }
+#mantle-hub .relay-wrap { display: none; padding-top: 8px; }
+#mantle-hub .relay-wrap.open { display: block; }
+#mantle-hub .relay-list { display: grid; }
+#mantle-hub .relay {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 20px;
+  gap: 14px;
+  align-items: center;
+  padding: 15px 4px;
+  border-bottom: 1px solid #2d3734;
+  color: inherit;
+  text-decoration: none;
+}
+#mantle-hub .relay:hover .relay-name { color: #c0d6b3; }
+#mantle-hub .chip { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #46534e; border-radius: 5px; color: #b8c2bf; }
+#mantle-hub .chip svg, #mantle-hub .go svg { width: 18px; height: 18px; }
+#mantle-hub .meta { display: grid; min-width: 0; gap: 4px; }
+#mantle-hub .relay-name { font-weight: 700; }
+#mantle-hub .relay-url { overflow-wrap: anywhere; color: #9da9a5; font-size: 0.82rem; }
+#mantle-hub .go { color: #9da9a5; }
+@media (max-width: 520px) {
+  #mantle-hub main { padding-top: 56px; }
+  #mantle-hub h1 { font-size: 2.6rem; }
+  #mantle-hub .dl-card { grid-template-columns: 1fr; gap: 14px; padding: 18px; }
+  #mantle-hub .dl-cta { justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #mantle-hub *, #mantle-hub *::before, #mantle-hub *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}`;
+document.head.appendChild(hubStyles);
+window.setMantleHubStyles = function (enabled) {
+  hubStyles.disabled = !enabled;
+};
+
+/* ============================================================
+   GRIDPULSE — same background as the menu. Text protection uses
+   elliptical falloff zones around protected blocks so nothing
+   overlaps what you're reading.
+   ============================================================ */
+(function initGridPulse() {
+  const el = document.getElementById("grid-pulse");
+  const canvas = el && el.querySelector("canvas");
+  const ctx = canvas && canvas.getContext("2d");
+  if (!el || !canvas || !ctx) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const CELL = 16;
+  const REACH = 2.6;
+  const MAX_LIT = 300;
+  const AVOID = "[data-grid-avoid]";
+  const AVOID_BLOCK = "data-grid-avoid-block";
+
+  const HUE_TOP = 30;
+  const HUE_MID = 220;
+  const HUE_BOT = 125;
+
+  const TINTS = [72, 65, 58, 51, 44];
+  const FAINT = 0.13;
+
+  const PAD = 14;
+  const FADE = 1.1;
+
+  const FADE_IN = 160;
+  const FADE_OUT = 750;
+
+  const easeOut = t => 1 - (1 - t) * (1 - t);
+  const easeIn = t => t * t;
+
+  let cols = 1, rows = 1, width = 0, height = 0;
+  let clear = [];
+  const cells = new Map();
+
+  function makeEllipse(r, bounds) {
+    return {
+      cx: r.left - bounds.left + r.width / 2,
+      cy: r.top - bounds.top + r.height / 2,
+      rx: Math.max(1, r.width / 2 + PAD),
+      ry: Math.max(1, r.height / 2 + PAD)
+    };
+  }
+
+  function measureText() {
+    const bounds = el.getBoundingClientRect();
+    clear = [...document.querySelectorAll(AVOID)].flatMap(node => {
+      if (node.hasAttribute(AVOID_BLOCK)) {
+        return [makeEllipse(node.getBoundingClientRect(), bounds)];
+      }
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const lines = [...range.getClientRects()].filter(r => r.width > 0 && r.height > 0);
+      const boxes = lines.length > 0 ? lines : [node.getBoundingClientRect()];
+      return boxes.map(r => makeEllipse(r, bounds));
+    });
+  }
+
+  function measure() {
+    width = el.clientWidth;
+    height = el.clientHeight;
+    cols = Math.max(1, Math.ceil(width / CELL));
+    rows = Math.max(1, Math.ceil(height / CELL));
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    measureText();
+    wake();
+  }
+
+  function brightness(col, row) {
+    const x = col * CELL + CELL / 2;
+    const y = row * CELL + CELL / 2;
+    let nearest = Infinity;
+    for (const e of clear) {
+      const dx = (x - e.cx) / e.rx;
+      const dy = (y - e.cy) / e.ry;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < nearest) nearest = d;
+      if (nearest === 0) break;
+    }
+    if (nearest === Infinity) return 1;
+    if (nearest <= 1) return FAINT;
+    const t = Math.min(1, (nearest - 1) / FADE);
+    return FAINT + (1 - FAINT) * (t * t);
+  }
+
+  function hueFor(t) {
+    if (t < 0.5) return HUE_TOP + (HUE_MID - HUE_TOP) * (t / 0.5);
+    return HUE_MID + (HUE_BOT - HUE_MID) * ((t - 0.5) / 0.5);
+  }
+
+  function ink(row) {
+    const t = rows > 1 ? Math.min(1, row / (rows - 1)) : 0;
+    const hue = ((hueFor(t) % 360) + 360) % 360;
+    const tint = TINTS[Math.floor(Math.random() * TINTS.length)];
+    return "hsl(" + Math.round(hue) + " 94% " + tint + "%)";
+  }
+
+  let frame = 0;
+  function draw(now) {
+    frame = 0;
+    ctx.clearRect(0, 0, width, height);
+    for (const [key, c] of cells) {
+      let alpha;
+      if (now < c.until) {
+        alpha = easeOut(Math.min(1, (now - c.born) / FADE_IN));
+      } else {
+        const t = (now - c.until) / FADE_OUT;
+        if (t >= 1) { cells.delete(key); continue; }
+        alpha = 1 - easeIn(t);
+      }
+      ctx.globalAlpha = alpha * c.dim;
+      ctx.fillStyle = c.colour;
+      ctx.fillRect(c.col * CELL + 1, c.row * CELL + 1, CELL - 1, CELL - 1);
+    }
+    ctx.globalAlpha = 1;
+    if (cells.size > 0) frame = requestAnimationFrame(draw);
+  }
+  function wake() {
+    if (!frame) frame = requestAnimationFrame(draw);
+  }
+
+  function light(col, row, hold) {
+    if (col < 0 || row < 0 || col >= cols || row >= rows) return;
+    if (cells.size >= MAX_LIT) return;
+    const key = col + "," + row;
+    const now = performance.now();
+    const lit = cells.get(key);
+    if (lit && now < lit.until) return;
+    let born = now;
+    if (lit) {
+      const faded = 1 - easeIn(Math.min(1, (now - lit.until) / FADE_OUT));
+      born = now - (1 - Math.sqrt(1 - faded)) * FADE_IN;
+    }
+    cells.set(key, {
+      col: col,
+      row: row,
+      colour: (lit && lit.colour) || ink(row),
+      dim: brightness(col, row),
+      born: born,
+      until: now + hold
+    });
+    wake();
+  }
+
+  let pending = 0;
+  let at = null;
+  function paint() {
+    pending = 0;
+    if (!at) return;
+    const cx = Math.floor(at.x / CELL);
+    const cy = Math.floor(at.y / CELL);
+    const span = Math.ceil(REACH);
+    for (let dy = -span; dy <= span; dy++) {
+      for (let dx = -span; dx <= span; dx++) {
+        const away = Math.hypot(dx, dy);
+        if (away > REACH) continue;
+        if (Math.random() > 1 - away / (REACH + 0.6)) continue;
+        light(cx + dx, cy + dy, 260 + Math.random() * 900);
+      }
+    }
+  }
+  function onMove(event) {
+    const bounds = el.getBoundingClientRect();
+    at = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    if (!pending) pending = requestAnimationFrame(paint);
+  }
+
+  let visible = true;
+  let beat = 0;
+  function drift() {
+    beat = window.setTimeout(drift, 1800 + Math.random() * 2200);
+    if (!visible || document.hidden) return;
+    const cx = Math.floor(Math.random() * cols);
+    const cy = Math.floor(Math.random() * rows);
+    const radius = 1.4 + Math.random() * 1.6;
+    const span = Math.ceil(radius);
+    for (let dy = -span; dy <= span; dy++) {
+      for (let dx = -span; dx <= span; dx++) {
+        const away = Math.hypot(dx, dy);
+        if (away > radius) continue;
+        const nearness = 1 - away / radius;
+        const hold = 500 + nearness * 1300;
+        light(cx + dx, cy + dy, hold);
+      }
+    }
+  }
+  beat = window.setTimeout(drift, 700);
+
+  const sight = new IntersectionObserver(entries => {
+    const entry = entries[0];
+    visible = entry ? entry.isIntersecting : true;
+  });
+  sight.observe(el);
+
+  const resize = new ResizeObserver(measure);
+  resize.observe(el);
+
+  let recheck = 0;
+  const copy = new MutationObserver(() => {
+    if (!recheck) {
+      recheck = requestAnimationFrame(() => {
+        recheck = 0;
+        measureText();
+      });
+    }
+  });
+  copy.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  measure();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(measureText).catch(() => {});
+  }
+  window.addEventListener("pointermove", onMove, { passive: true });
+})();
+
+/* ============================================================
+   CONFIG
+   ============================================================ */
+// The launcher file (Mantle.html), via mirrors of the raw link.
+// First responder wins. Case matters: the file is Mantle.html.
+const SHELL_SOURCES = [
+  "https://cdn.jsdelivr.net/gh/dobberr/mantle-menu@main/Mantle.html",
+  "https://raw.githubusercontent.com/dobberr/mantle-menu/refs/heads/main/Mantle.html",
+  "https://raw.githack.com/dobberr/mantle-menu/main/Mantle.html",
+  "https://cdn.statically.io/gh/dobberr/mantle-menu/main/Mantle.html"
+];
+const SHELL_FILENAME = "Mantle.html";
+
+/* RELAY LINKS: edit this list. Each entry becomes one card.
+   These open Mantle directly in the browser tab. */
+const RELAYS = [
+  { name: "Relay 1", url: "https://mantle-menu.pages.dev/" },
+  { name: "Relay 2", url: "https://mantle-menu.mantleunblocked.workers.dev/" },
+  { name: "Relay 3", url: "https://sites.google.com/view/mantle-menu/" }
+];
+
+/* ============================================================
+   DISCLOSURE HELPER
+   ============================================================ */
+function wireDisclosure(gateId, wrapId, labelId, showText, hideText) {
+  const gate = document.getElementById(gateId);
+  const wrap = document.getElementById(wrapId);
+  const label = document.getElementById(labelId);
+  if (!gate || !wrap) return;
+
+  let open = false;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  gate.addEventListener("click", function () {
+    open = !open;
+    gate.setAttribute("aria-expanded", String(open));
+    if (label) label.textContent = open ? hideText : showText;
+    wrap.classList.toggle("open", open);
+
+    if (open) {
+      setTimeout(function () {
+        try {
+          wrap.scrollIntoView({
+            behavior: reduceMotion.matches ? "auto" : "smooth",
+            block: "nearest"
+          });
+        } catch (_) {}
+      }, 150);
+    }
+  });
+}
+
+/* ============================================================
+   SHELL DOWNLOAD
+   ============================================================ */
+const dlCard = document.getElementById("dlCard");
+const dlCta = document.getElementById("dlCta");
+const dlDesc = document.getElementById("dlDesc");
+const dlHelp = document.getElementById("dlHelp");
+const DL_DESC_DEFAULT = dlDesc.textContent;
+
+let dlState = "idle"; // idle | busy | ok | bad
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+function setCta(html, cls) {
+  dlCta.innerHTML = html;
+  dlCta.className = "dl-cta" + (cls ? " " + cls : "");
+}
+
+function saveFile(text, blobUrlOut) {
+  const blob = new Blob([text], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = SHELL_FILENAME;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  if (blobUrlOut) blobUrlOut.value = url; // keep alive for right-click save-as
+}
+
+dlCard.addEventListener("click", async function () {
+  if (dlState === "busy") return;
+  dlState = "busy";
+  dlCard.setAttribute("aria-busy", "true");
+  dlHelp.style.display = "none";
+  dlDesc.textContent = DL_DESC_DEFAULT;
+  setCta('<span class="spin"></span><span>Fetching</span>', "");
+
+  let lastErr;
+  for (const url of SHELL_SOURCES) {
+    try {
+      const res = await fetch(url, { cache: "no-cache" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const text = await res.text();
+      // Fingerprint check: rejects school block pages served with 200
+      if (text.length < 400 || !/<html/i.test(text) || !/mantle/i.test(text))
+        throw new Error("Response wasn't the launcher file");
+
+      const box = { value: null };
+      saveFile(text, box);
+
+      dlState = "ok";
+      dlCard.setAttribute("aria-busy", "false");
+      setCta('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Saved</span>', "ok");
+      dlDesc.textContent = "Saved as " + SHELL_FILENAME + ". Open it to start Mantle.";
+      dlHelp.innerHTML = 'Not in your Downloads folder? Your embed may block saves: ' +
+        '<a href="' + box.value + '" download="' + SHELL_FILENAME + '">right-click this link and choose "Save link as"</a>.';
+      dlHelp.style.display = "block";
+      console.info("[Mantle] launcher file served from " + new URL(url).host);
+      return;
+    } catch (e) { lastErr = e; }
+  }
+
+  dlState = "bad";
+  dlCard.setAttribute("aria-busy", "false");
+  setCta('<span>Failed</span>', "bad");
+  dlDesc.textContent = "Every mirror was blocked on this network.";
+  dlHelp.innerHTML = 'Open one of these directly, then press Ctrl+S to save it as ' + SHELL_FILENAME + ':' +
+    '<span class="fallback-links">' +
+    SHELL_SOURCES.map(function (u) {
+      return '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(new URL(u).host) + "</a>";
+    }).join("") +
+    "</span>";
+  dlHelp.style.display = "block";
+});
+
+/* ============================================================
+   RELAY CARDS — built from the RELAYS array, then wired
+   ============================================================ */
+(function buildRelays() {
+  const section = document.getElementById("relaySection");
+  const list = document.getElementById("relayList");
+
+  if (!RELAYS.length) { section.style.display = "none"; return; }
+
+  const extSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  const arrowSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+
+  RELAYS.forEach(function (r) {
+    const a = document.createElement("a");
+    a.className = "card relay";
+    a.href = r.url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.innerHTML =
+      '<span class="chip chip-relay" aria-hidden="true">' + extSvg + "</span>" +
+      '<span class="meta"><span class="relay-name">' + esc(r.name) + "</span>" +
+      '<span class="relay-url">' + esc(r.url) + "</span></span>" +
+      '<span class="go" aria-hidden="true">' + arrowSvg + "</span>";
+    list.appendChild(a);
+  });
+})();
+
+wireDisclosure("relayGate", "relayWrap", "gateLabel", "Show links", "Hide links");
+
+/* Launch capability is live: disarm the watchdog */
+window.__mantleBooted = true;
+console.info("[Mantle] download hub ready · v2.0");
+}
+</script>
+</body>
+</html>
