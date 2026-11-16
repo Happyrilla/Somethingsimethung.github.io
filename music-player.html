@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Player</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --bg-2: #111827;
+        --panel: rgba(15, 23, 42, 0.8);
+        --panel-border: rgba(148, 163, 184, 0.25);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent: #22c55e;
+        --accent-2: #38bdf8;
+        --danger: #ef4444;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        min-height: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 40%, #020617 100%);
+        color: var(--text);
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: 40px 20px;
+      }
+
+      .app {
+        width: min(100%, 960px);
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--panel-border);
+        border-radius: 22px;
+        box-shadow: 0 20px 60px rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(12px);
+        overflow: hidden;
+      }
+
+      .topbar {
+        padding: 22px 22px 16px;
+        border-bottom: 1px solid var(--panel-border);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.7rem, 3vw, 2.6rem);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 12px;
+        padding: 18px 22px 10px;
+      }
+
+      input[type="text"] {
+        width: 100%;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--panel-border);
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--text);
+        font-size: 1rem;
+      }
+
+      input::placeholder {
+        color: var(--muted);
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 14px 18px;
+        font-size: 0.98rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary {
+        background: linear-gradient(135deg, var(--accent), #16a34a);
+        color: #04130b;
+      }
+
+      .secondary {
+        background: rgba(56, 189, 248, 0.14);
+        color: var(--text);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+      }
+
+      .danger {
+        background: rgba(239, 68, 68, 0.12);
+        color: #fecaca;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      .player-area {
+        padding: 18px 22px 24px;
+      }
+
+      .frame-wrap {
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid var(--panel-border);
+        background: rgba(2, 6, 23, 0.8);
+        min-height: 260px;
+      }
+
+      .frame-wrap.hidden {
+        display: none;
+      }
+
+      .embed-frame {
+        display: block;
+        width: 100%;
+        min-height: 380px;
+        border: 0;
+      }
+
+      .audio-wrap {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid var(--panel-border);
+        border-radius: 20px;
+        padding: 18px;
+      }
+
+      .audio-wrap.hidden {
+        display: none;
+      }
+
+      .title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      audio {
+        width: 100%;
+        margin-top: 12px;
+      }
+
+      .notes {
+        padding: 0 22px 22px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .chip {
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      @media (max-width: 700px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="topbar">
+        <h1>My Music Player</h1>
+      </div>
+
+      <div class="controls">
+        <input
+          id="musicUrl"
+          type="text"
+          value="https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=4d6d1b423bff4cfa"
+          placeholder="Paste a Spotify, YouTube, or direct audio URL"
+        />
+        <button class="primary" id="loadMusic">Load</button>
+        <button class="secondary" id="demoTrack">Demo Track</button>
+        <button class="danger" id="clearPlayer">Clear</button>
+      </div>
+
+      <div class="player-area">
+        <div id="spotifyFrameWrap" class="frame-wrap">
+          <iframe
+            id="embedFrame"
+            class="embed-frame"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+            title="Embedded music player"
+          ></iframe>
+        </div>
+
+        <div id="audioWrap" class="audio-wrap hidden">
+          <div class="title" id="audioTitle">Audio file</div>
+          <audio id="audioPlayer" controls preload="metadata"></audio>
+        </div>
+      </div>
+
+      <div class="notes">
+        <div>Tip: paste a public Spotify, YouTube, or direct MP3 link. Spotify embeds work best with public tracks, albums, or playlists.</div>
+        <div class="chip-list">
+          <button class="chip" data-demo="https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp?si=02e5d30e4b464ea7">Spotify demo</button>
+          <button class="chip" data-demo="https://www.youtube.com/watch?v=ScMzIvxBSi4">YouTube demo</button>
+          <button class="chip" data-demo="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">MP3 demo</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const musicUrlInput = document.getElementById('musicUrl');
+      const loadButton = document.getElementById('loadMusic');
+      const demoButton = document.getElementById('demoTrack');
+      const clearButton = document.getElementById('clearPlayer');
+      const embedFrame = document.getElementById('embedFrame');
+      const spotifyFrameWrap = document.getElementById('spotifyFrameWrap');
+      const audioWrap = document.getElementById('audioWrap');
+      const audioPlayer = document.getElementById('audioPlayer');
+      const audioTitle = document.getElementById('audioTitle');
+
+      function clearPlayer() {
+        musicUrlInput.value = '';
+        embedFrame.src = '';
+        audioPlayer.src = '';
+        audioPlayer.load();
+        spotifyFrameWrap.classList.remove('hidden');
+        audioWrap.classList.add('hidden');
+      }
+
+      function setAudioSource(url, label = 'Audio file') {
+        audioTitle.textContent = label;
+        audioPlayer.src = url;
+        audioPlayer.load();
+        audioPlayer.play().catch(() => {
+          // Playback may be blocked until user interaction. This is okay.
+        });
+
+        spotifyFrameWrap.classList.add('hidden');
+        audioWrap.classList.remove('hidden');
+      }
+
+      function isDirectAudioUrl(url) {
+        return /\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(url);
+      }
+
+      function convertSpotifyUrlToEmbed(url) {
+        try {
+          const parsed = new URL(url);
+          const path = parsed.pathname.replace(/\/+$/, '');
+          const match = path.match(/\/((?:track|album|playlist|episode|user\/.+?\/playlist)\/.+?)(?:\/)?$/i);
+
+          if (match) {
+            return `https://open.spotify.com/embed${match[1].startsWith('/') ? match[1] : '/' + match[1]}`;
+          }
+
+          return null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function convertYouTubeUrlToEmbed(url) {
+        try {
+          const parsed = new URL(url);
+          const videoId = parsed.searchParams.get('v');
+          if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+
+          const shortMatch = parsed.pathname.match(/^\/shorts\/([A-Za-z0-9_-]+)/i);
+          if (shortMatch) return `https://www.youtube.com/embed/${shortMatch[1]}`;
+
+          return null;
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function loadMusic() {
+        const rawUrl = musicUrlInput.value.trim();
+        if (!rawUrl) {
+          alert('Please paste a music URL first.');
+          return;
+        }
+
+        if (isDirectAudioUrl(rawUrl)) {
+          setAudioSource(rawUrl, 'Audio file');
+          return;
+        }
+
+        const spotifyEmbed = convertSpotifyUrlToEmbed(rawUrl);
+        if (spotifyEmbed) {
+          embedFrame.src = spotifyEmbed;
+          spotifyFrameWrap.classList.remove('hidden');
+          audioWrap.classList.add('hidden');
+          return;
+        }
+
+        const youtubeEmbed = convertYouTubeUrlToEmbed(rawUrl);
+        if (youtubeEmbed) {
+          embedFrame.src = youtubeEmbed;
+          spotifyFrameWrap.classList.remove('hidden');
+          audioWrap.classList.add('hidden');
+          return;
+        }
+
+        // If it is not a Spotify/YouTube URL, assume it is a direct media stream.
+        setAudioSource(rawUrl, 'Audio file');
+      }
+
+      loadButton.addEventListener('click', loadMusic);
+      clearButton.addEventListener('click', clearPlayer);
+      demoButton.addEventListener('click', () => {
+        const demoUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+        musicUrlInput.value = demoUrl;
+        setAudioSource(demoUrl, 'Demo track');
+      });
+
+      document.querySelectorAll('.chip').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          const url = chip.dataset.demo;
+          musicUrlInput.value = url;
+          loadMusic();
+        });
+      });
+
+      // Load the default Spotify demo on page open.
+      const initialUrl = musicUrlInput.value.trim();
+      if (initialUrl) {
+        loadMusic();
+      }
+    </script>
+  </body>
+</html>
